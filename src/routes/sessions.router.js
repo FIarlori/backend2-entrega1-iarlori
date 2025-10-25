@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import bcrypt from 'bcrypt';
+import User from '../models/User.js';
+import generateToken from '../utils/jwt.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
-const passport = require('passport');
-const bcrypt = require('bcrypt');
-const User = require('../models/User');
-const { generateToken } = require('../utils/jwt');
 
 router.post('/login', async (req, res) => {
     try {
@@ -20,21 +21,23 @@ router.post('/login', async (req, res) => {
         }
 
         const token = generateToken(user);
-        res.json({ token });
+        res.status(200).json({ token });
     } catch (error) {
-        res.status(500).json({ error: 'Error al iniciar sesión' });
+        console.error('Error al iniciar sesión:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-router.get('/current', passport.authenticate('jwt', { session: false }), (req, res) => {
-    res.json({
+router.get('/current', auth, (req, res) => {
+    const userData = {
         id: req.user._id,
         first_name: req.user.first_name,
         last_name: req.user.last_name,
         email: req.user.email,
         age: req.user.age,
         role: req.user.role
-    });
+    };
+    res.status(200).json(userData);
 });
 
-module.exports = router;
+export default router;

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+import Cart from '../models/Cart.js';
+import bcrypt from 'bcrypt';
+
 const router = express.Router();
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const { generateToken } = require('../utils/jwt');
 
 router.post('/', async (req, res) => {
     try {
@@ -14,6 +15,8 @@ router.post('/', async (req, res) => {
         }
 
         const hashedPassword = bcrypt.hashSync(password, 10);
+        const cart = new Cart({ products: [] });
+        await cart.save();
 
         const user = new User({
             first_name,
@@ -21,33 +24,35 @@ router.post('/', async (req, res) => {
             email,
             age,
             password: hashedPassword,
-            cart: null
+            cart: cart._id
         });
 
         await user.save();
         res.status(201).json({ message: 'Usuario creado exitosamente' });
     } catch (error) {
-        res.status(500).json({ error: 'Error al crear usuario' });
+        console.error('Error al crear usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
 router.get('/', async (req, res) => {
     try {
-        const users = await User.find().populate('cart');
-        res.json(users);
+        const users = await User.find().populate('cart', 'products');
+        res.status(200).json(users);
     } catch (error) {
         console.error('Error al obtener usuarios:', error);
-        res.status(500).json({ error: 'Error al obtener usuarios', details: error.message });
+        res.status(500).json({ error: 'Error interno del servidor', details: error.message });
     }
 });
 
 router.get('/:id', async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).populate('cart');
+        const user = await User.findById(req.params.id).populate('cart', 'products');
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-        res.json(user);
+        res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ error: 'Error al obtener usuario' });
+        console.error('Error al obtener usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
@@ -57,11 +62,12 @@ router.put('/:id', async (req, res) => {
         if (password) {
             updates.password = bcrypt.hashSync(password, 10);
         }
-        const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true });
+        const user = await User.findByIdAndUpdate(req.params.id, updates, { new: true }).populate('cart');
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-        res.json(user);
+        res.status(200).json(user);
     } catch (error) {
-        res.status(500).json({ error: 'Error al actualizar usuario' });
+        console.error('Error al actualizar usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
@@ -69,10 +75,16 @@ router.delete('/:id', async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(req.params.id);
         if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-        res.json({ message: 'Usuario eliminado' });
+        
+        if (user.cart) {
+            await Cart.findByIdAndDelete(user.cart);
+        }
+        
+        res.status(200).json({ message: 'Usuario eliminado' });
     } catch (error) {
-        res.status(500).json({ error: 'Error al eliminar usuario' });
+        console.error('Error al eliminar usuario:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
-module.exports = router;
+export default router;

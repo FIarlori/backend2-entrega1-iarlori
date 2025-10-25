@@ -1,8 +1,7 @@
-const mongoose = require('mongoose');
-require('dotenv').config();
-
-require('../models/User');
-require('../models/Cart');
+import mongoose from 'mongoose';
+import 'dotenv/config';
+import '../models/User.js';
+import '../models/Cart.js';
 
 const connectDB = async () => {
     try {
@@ -14,4 +13,4 @@ const connectDB = async () => {
     }
 };
 
-module.exports = connectDB;
+export default connectDB;

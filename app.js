@@ -1,10 +1,10 @@
-const express = require('express');
-const passport = require('passport');
-const sessionRouter = require('./src/routes/sessions.router');
-const userRouter = require('./src/routes/users.router');
-const connectDB = require('./src/config/database');
-require('dotenv').config();
-require('./src/config/passport.config');
+import express from 'express';
+import passport from 'passport';
+import sessionRouter from './src/routes/sessions.router.js';
+import userRouter from './src/routes/users.router.js';
+import connectDB from './src/config/database.js';
+import 'dotenv/config';
+import './src/config/passport.config.js';
 
 const app = express();
 
@@ -19,4 +19,8 @@ app.use('/api/sessions', sessionRouter);
 app.use('/api/users', userRouter);
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+app.listen(PORT, () => {
+    console.log(`Servidor corriendo en puerto ${PORT}`);
+});
+
+export default app;
